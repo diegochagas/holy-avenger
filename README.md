@@ -13,7 +13,7 @@ No build step, no runtime dependencies: serve the folder over HTTP (GitHub Pages
 ## Play
 
 ```bash
-python3 tools/serve.py 8091
+python3 engine/tools/serve.py 8091
 ```
 
 Then open <http://localhost:8091>.
@@ -33,28 +33,36 @@ Test entry points: `?map=12&x=5&y=7` (start on a map), `?battle=88` (start a bat
 
 ## Architecture
 
+The runtime and converter are shared with the RPG Maker 2000 remake *saint-seiya-rpg-asgard*: they
+live in the sibling repo `rpgmaker-web-engine` and are vendored here as `engine/` (see
+`engine/VERSION`). This repo holds only what is specific to Holy Avenger: `game/config.js` (save
+keys), `game/terms.js` (English menu and battle vocabulary), `index.html`, the converted `data/` and
+`assets/`, and the tests. Update the engine with `../rpgmaker-web-engine/scripts/vendor-engine .`;
+never edit `engine/` here.
+
 ```mermaid
 flowchart LR
-  subgraph convert["tools/convert.py (once)"]
+  subgraph convert["engine/tools/convert.py (once)"]
     LCF["RPG_RT.ldb / .lmt / MapNNNN.lmu<br/>(tools/lcf reader)"] --> P["rmconv/project.py"]
     P --> R["rmconv/refs.py<br/>assets in use"]
     R --> X["rmconv/export.py + media.py<br/>PNG, OGG (MIDI via SoundFont), WebM"]
   end
   P --> D["data/*.json"]
   X --> A["assets/"]
-  D --> L["js/loader.js<br/>(maps on demand)"]
+  BOOT["index.html: game/*.js,<br/>engine/boot.js"] --> L
+  D --> L["engine/js/loader.js<br/>(maps on demand)"]
   A --> L
   L --> G["js/game.js<br/>scene stack"]
   G --> M["Map: map.js, map_tiles.js,<br/>map_event.js, character.js"]
-  G --> B["Battle 2003: js/battle/*"]
+  G --> B["Battle 2003: engine/js/battle/*"]
   G --> U["Menus: scene_menu*.js, shop, files"]
   M --> I["Event interpreter:<br/>js/events/*"]
   B --> I
 ```
 
-- `js/events/interpreter.js` runs event lists; each `commands_*.js` registers its RPG Maker
+- `engine/js/events/interpreter.js` runs event lists; each `commands_*.js` registers its RPG Maker
   command codes in `EventCommands`.
-- `js/battle/`: `rules.js` (formulas), `atb.js` (gauges), `ai.js` (enemy actions),
+- `engine/js/battle/`: `rules.js` (formulas), `atb.js` (gauges), `ai.js` (enemy actions),
   `actions.js` + `action_parts.js` (one action as timed steps), `effects.js` (damage, states),
   `events.js` (troop pages, battle-only commands), `input*.js` (commands and targets),
   `windows.js`, `sprites.js`, `layout.js`, `scene*.js`.
@@ -65,7 +73,7 @@ flowchart LR
 
 ```bash
 scripts/setup
-.venv/bin/python tools/convert.py \
+.venv/bin/python engine/tools/convert.py \
   --game "/path/to/Holy Avenger" \
   --rtp "/path/to/RTP/2003" \
   --sf2 /usr/share/sounds/sf2/default-GM.sf2
@@ -76,13 +84,13 @@ renders MIDI music with `tinysoundfont` and a GM SoundFont. Assets missing from 
 taken from the RTP folder(s). Three sounds the game references are not in the game or the 2003 RTP
 (`Rebirth2` and two Japanese-named RTP files) and play as silence.
 
-The bitmap fonts in `assets/font/` are RPG_RT's built-in fonts, extracted with the
-`fon2png.py` tool of the sibling `saint-seiya-rpg-asgard` repo.
+The bitmap fonts in `assets/font/` are RPG_RT's built-in fonts, extracted with
+`engine/tools/fon2png.py`.
 
 ## Checks
 
 ```bash
-scripts/check                 # unit tests (node --test), converter tests, clean-code audit
+scripts/check                 # engine copy intact, game contract tests (node --test), clean-code audit
 npx playwright test           # smoke + battle e2e, screenshots in e2e/screenshots/
 ```
 

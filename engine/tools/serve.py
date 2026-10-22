@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tiny no-cache static server for local development.
 
-Usage: python tools/serve.py [port] [directory]
+Usage: python engine/tools/serve.py [port] [directory]   (directory: default the current folder)
 """
 import http.server
 import os
@@ -34,7 +34,7 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8090
-    directory = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+    directory = sys.argv[2] if len(sys.argv) > 2 else os.getcwd()   # run from the game repo root
     os.chdir(directory)
     server = http.server.ThreadingHTTPServer(("127.0.0.1", port), NoCacheHandler)
     print("Serving %s on http://127.0.0.1:%d (Ctrl+C or the game's Exit to stop)" % (directory, port), flush=True)

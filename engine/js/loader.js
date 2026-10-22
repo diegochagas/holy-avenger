@@ -1,5 +1,5 @@
 /* Loads the converted game data (JSON) and caches images / audio by manifest name.
-   Maps load on demand (Holy Avenger has 436) and the teleport targets of a map are prefetched. */
+   Maps load on demand (a game can have hundreds) and the teleport targets of a map are prefetched. */
 var TELEPORT_CODE = 10810;
 var NON_IMAGE_CATEGORIES = { music: 1, sound: 1, movie: 1, engine: 1 };
 

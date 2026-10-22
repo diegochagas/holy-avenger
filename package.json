@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "check": "scripts/check",
-    "start": "python3 tools/serve.py 8091",
+    "start": "python3 engine/tools/serve.py 8091",
     "e2e": "playwright test"
   },
   "devDependencies": {

@@ -2,8 +2,8 @@
 """Convert an RPG Maker 2000/2003 project into the JSON + web assets used by this game.
 
 Usage:
-    python tools/convert.py --game "<project folder>" --rtp "<RTP folder>" [--rtp ...] \
-        [--out <repo root>] [--sf2 <soundfont.sf2>] [--skip-audio] [--encoding cp1252]
+    python engine/tools/convert.py --game "<project folder>" --rtp "<RTP folder>" [--rtp ...] \
+        [--out <game repo root>] [--sf2 <soundfont.sf2>] [--skip-audio] [--encoding cp1252]
 
 Nothing here is specific to one game: every path comes from the command line.
 Output:
@@ -28,7 +28,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--game", required=True, help="RPG Maker project folder (contains RPG_RT.ldb)")
     ap.add_argument("--rtp", action="append", default=[], help="RTP folder(s) used for missing assets")
-    ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    ap.add_argument("--out", default=os.getcwd(), help="game repo root (default: current folder)")
     ap.add_argument("--sf2", default="", help="GM SoundFont for MIDI rendering")
     ap.add_argument("--skip-audio", action="store_true")
     ap.add_argument("--encoding", default="cp1252")

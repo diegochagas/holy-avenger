@@ -3,7 +3,7 @@
 import vm from "node:vm";
 import fs from "node:fs";
 
-const ROOT = new URL("../", import.meta.url);
+const ROOT = new URL("../../", import.meta.url);
 
 /**
  * @param {string[]} files paths relative to the repo root, in index.html order

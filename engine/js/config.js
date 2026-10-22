@@ -1,4 +1,17 @@
 /* Global constants for the RPG Maker 2000/2003 style runtime. */
+
+/**
+ * localStorage key for this game. GAME_INFO.id comes from the game repo's game/config.js, loaded
+ * before the engine: two games served from one origin (GitHub Pages) must not share saves.
+ * @param {string} suffix @returns {string} example: gameStorageKey('_settings') === 'holy_avenger_settings'
+ */
+function gameStorageKey(suffix) {
+  if (typeof GAME_INFO === 'undefined' || !GAME_INFO.id) {
+    throw new Error('GAME_INFO.id is missing: define it in game/config.js, e.g. var GAME_INFO = { id: "my_game" }');
+  }
+  return GAME_INFO.id + suffix;
+}
+
 var CONFIG = {
   SCREEN_W: 320,
   SCREEN_H: 240,
@@ -8,8 +21,8 @@ var CONFIG = {
   STEP: 256,
   FONT_ADVANCE: 6,    /* half-width glyph advance in px */
   LINE_HEIGHT: 16,
-  SAVE_PREFIX: 'holy_avenger_save_',
-  SETTINGS_KEY: 'holy_avenger_settings',
+  SAVE_PREFIX: gameStorageKey('_save_'),
+  SETTINGS_KEY: gameStorageKey('_settings'),
   MAX_SAVES: 15,
   DATA_DIR: 'data/',
 };

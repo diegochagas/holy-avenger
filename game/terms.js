@@ -1,4 +1,4 @@
-/* Database "terms" tables for Holy Avenger.
+/* Database "terms" tables for Holy Avenger (game-specific; the engine reads them through I18N).
    TERMS_EN replaces the Portuguese terms when EN is active.
    TERMS_PT_FALLBACK covers terms the author left as RPG Maker 2003's Japanese defaults
    (they arrive as Shift-JIS bytes read as cp1252, see Terms.get in state.js). */

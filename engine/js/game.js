@@ -94,7 +94,8 @@ var Game = {
   startBattle: function (args, cb) {
     this.battleRunning = true;
     var self = this;
-    this.push(new SceneBattle(args, function (result) {
+    var BattleScene = Loader.is2k3() ? SceneBattle : SceneBattle2k;   /* 2003 side view ATB / 2000 front view */
+    this.push(new BattleScene(args, function (result) {
       self.pop();
       self.battleRunning = false;
       cb(result);

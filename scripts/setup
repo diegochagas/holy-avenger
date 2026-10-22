@@ -8,5 +8,5 @@ npx playwright install chromium
 if [[ ! -x .venv/bin/python ]]; then
     python3 -m venv --system-site-packages .venv
 fi
-.venv/bin/pip install -q --no-deps -r tools/requirements.txt
-echo "setup done: run scripts/check, then python3 tools/serve.py 8091"
+.venv/bin/pip install -q --no-deps -r engine/tools/requirements.txt
+echo "setup done: run scripts/check, then python3 engine/tools/serve.py 8091"
