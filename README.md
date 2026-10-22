@@ -87,6 +87,13 @@ taken from the RTP folder(s). Three sounds the game references are not in the ga
 The bitmap fonts in `assets/font/` are RPG_RT's built-in fonts, extracted with
 `engine/tools/fon2png.py`.
 
+## Deploy
+
+Every push to `main` deploys to GitHub Pages once CI passes (`.github/workflows/pages.yml`).
+`scripts/build-site _site` picks what the browser loads: `index.html`, `game/`, `engine/` without
+`tools/` and `testing/`, `data/` and `assets/`. Pages must be on in the repo settings
+(Source: GitHub Actions).
+
 ## Checks
 
 ```bash
