@@ -1,0 +1,13 @@
+{
+  "name": "holy-avenger",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "scripts/check",
+    "start": "python3 tools/serve.py 8091",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  }
+}

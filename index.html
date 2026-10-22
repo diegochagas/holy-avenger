@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Holy Avenger</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="wrapper">
+      <div id="topbar">
+        <span id="title">Holy Avenger</span>
+        <span id="topbar-right">
+          <button id="btn-lang" class="bar-btn" title="Language / Idioma">EN</button>
+          <button id="btn-fullscreen" class="bar-btn" title="Fullscreen">⛶</button>
+        </span>
+      </div>
+      <div id="stage">
+        <canvas id="game" width="320" height="240"></canvas>
+        <div id="overlay">
+          <div id="loading">Loading…</div>
+        </div>
+      </div>
+      <div id="controller">
+        <div id="dpad">
+          <button class="ctrl-btn" data-key="up">▲</button>
+          <div class="dpad-row">
+            <button class="ctrl-btn" data-key="left">◄</button>
+            <button class="ctrl-btn" data-key="down">▼</button>
+            <button class="ctrl-btn" data-key="right">►</button>
+          </div>
+        </div>
+        <div id="action-pad">
+          <button class="ctrl-btn act" data-key="cancel">X</button>
+          <button class="ctrl-btn act" data-key="ok">Z</button>
+        </div>
+      </div>
+      <div id="help"></div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/i18n.js"></script>
+    <script src="js/i18n_terms.js"></script>
+    <script src="js/loader.js"></script>
+    <script src="js/input.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/gfx.js"></script>
+    <script src="js/font.js"></script>
+    <script src="js/window.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/actor.js"></script>
+    <script src="js/actor_growth.js"></script>
+    <script src="js/party.js"></script>
+    <script src="js/character.js"></script>
+    <script src="js/map_event.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/map_tiles.js"></script>
+    <script src="js/screen.js"></script>
+    <script src="js/message.js"></script>
+    <script src="js/movie.js"></script>
+    <script src="js/events/interpreter.js"></script>
+    <script src="js/events/conditions.js"></script>
+    <script src="js/events/commands_message.js"></script>
+    <script src="js/events/commands_flow.js"></script>
+    <script src="js/events/commands_party.js"></script>
+    <script src="js/events/commands_map.js"></script>
+    <script src="js/events/commands_scene.js"></script>
+    <script src="js/events/commands_system.js"></script>
+    <script src="js/battle_anim.js"></script>
+    <script src="js/scene_title.js"></script>
+    <script src="js/scene_map.js"></script>
+    <script src="js/scene_menu.js"></script>
+    <script src="js/scene_menu_item.js"></script>
+    <script src="js/scene_menu_skill.js"></script>
+    <script src="js/scene_menu_equip.js"></script>
+    <script src="js/scene_menu_status.js"></script>
+    <script src="js/scene_shop.js"></script>
+    <script src="js/battle/rules.js"></script>
+    <script src="js/battle/enemy.js"></script>
+    <script src="js/battle/layout.js"></script>
+    <script src="js/battle/sprites.js"></script>
+    <script src="js/battle/windows.js"></script>
+    <script src="js/battle/ai.js"></script>
+    <script src="js/battle/atb.js"></script>
+    <script src="js/battle/effects.js"></script>
+    <script src="js/battle/actions.js"></script>
+    <script src="js/battle/action_parts.js"></script>
+    <script src="js/battle/events.js"></script>
+    <script src="js/battle/input.js"></script>
+    <script src="js/battle/input_commands.js"></script>
+    <script src="js/battle/input_targets.js"></script>
+    <script src="js/battle/scene.js"></script>
+    <script src="js/battle/scene_loop.js"></script>
+    <script src="js/battle/scene_flow.js"></script>
+    <script src="js/scene_file.js"></script>
+    <script src="js/scene_gameover.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/debug_start.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
