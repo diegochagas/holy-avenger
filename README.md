@@ -33,12 +33,12 @@ Test entry points: `?map=12&x=5&y=7` (start on a map), `?battle=88` (start a bat
 
 ## Architecture
 
-The runtime and converter are shared with the RPG Maker 2000 remake *saint-seiya-rpg-asgard*: they
-live in the sibling repo `rpgmaker-web-engine` and are vendored here as `engine/` (see
-`engine/VERSION`). This repo holds only what is specific to Holy Avenger: `game/config.js` (save
-keys), `game/terms.js` (English menu and battle vocabulary), `index.html`, the converted `data/` and
-`assets/`, and the tests. Update the engine with `../rpgmaker-web-engine/scripts/vendor-engine .`;
-never edit `engine/` here.
+The runtime and converter live in `engine/` and belong to this repo. They started as an engine
+shared with the RPG Maker 2000 remake *saint-seiya-rpg-asgard*, which keeps its own copy, so the
+engine still carries the 2000 front-view battle (`engine/js/battle2k/`) next to the 2003 one;
+`Loader.is2k3()` picks between them. Holy Avenger's own settings are `game/config.js` (save keys),
+`game/terms.js` (English menu and battle vocabulary), `index.html`, the converted `data/` and
+`assets/`.
 
 ```mermaid
 flowchart LR
@@ -90,7 +90,7 @@ The bitmap fonts in `assets/font/` are RPG_RT's built-in fonts, extracted with
 ## Checks
 
 ```bash
-scripts/check                 # engine copy intact, game contract tests (node --test), clean-code audit
+scripts/check                 # engine + game contract tests (node --test), converter tests, clean-code audit
 npx playwright test           # smoke + battle e2e, screenshots in e2e/screenshots/
 ```
 
@@ -98,5 +98,6 @@ npx playwright test           # smoke + battle e2e, screenshots in e2e/screensho
 
 *Holy Avenger* (the fan game) is by Lonely Heart, based on the comic *Holy Avenger* by Marcelo
 Cassaro and Erica Awano. Graphics and music partly come from the RPG Maker 2003 RTP, which has its
-own licence terms. This repository is a private preservation project; check those rights before
+own licence terms. The runtime and tools are original code; `engine/tools/lcf/*.csv` come from
+the liblcf project (MIT). This repository is a private preservation project; check those rights before
 publishing it.
