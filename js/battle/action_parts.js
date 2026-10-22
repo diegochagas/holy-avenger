@@ -29,7 +29,9 @@ var ActionTargets = {
     var src = a.source, foes = this.opponents(src, battle);
     if (a.kind === ACTION.ATTACK) {
       var all = !src.isEnemy && src.weapons().some(function (w) { return w.attack_all; });
-      return all ? foes : this.single(a.target, foes);
+      if (all) return foes;
+      var allies = this.allies(src, battle);   /* confused battlers attack their own side */
+      return a.target && allies.indexOf(a.target) >= 0 && !a.target.isDead() ? [a.target] : this.single(a.target, foes);
     }
     if (a.kind === ACTION.SKILL) return this.skillTargets(DB.skill(a.skill), a, battle);
     if (a.kind === ACTION.ITEM) return DB.item(a.item).entire_party ? Party.members.slice() : [a.target || src];
@@ -120,10 +122,23 @@ var ActionHits = {
     var w = a.source.weapon(), d = ActionVisuals.animData(a);
     return (w && w.dual_attack ? 2 : 1) * (((d && d.attacks) || 0) + 1);
   },
+  /* two-weapon actors swing each weapon separately, each hit using only that weapon (2003 MultiHit) */
+  weaponSlots: function (src) {
+    if (src.isEnemy || !src.twoWeapon || !src.equip[0] || !src.equip[1]) return [null];
+    return [0, 1];
+  },
+  attack: function (r) {
+    var a = r.action, battle = r.battle, src = a.source, self = this;
+    this.weaponSlots(src).forEach(function (slot) {
+      src.attackSlot = slot;
+      for (var h = 0; h < self.hitCount(a); h++) self.each(r, function (t) { return BattleEffects.normalAttack(src, t, battle); });
+    });
+    src.attackSlot = null;
+  },
   apply: function (r) {
-    var a = r.action, battle = r.battle;
+    var a = r.action;
     if (a.kind === ACTION.ATTACK) {
-      for (var h = 0; h < this.hitCount(a); h++) this.each(r, function (t) { return BattleEffects.normalAttack(a.source, t, battle); });
+      this.attack(r);
     } else if (a.kind === ACTION.SKILL) {
       var sk = DB.skill(a.skill);
       this.each(r, function (t) { return BattleEffects.skill(a.source, t, sk); });

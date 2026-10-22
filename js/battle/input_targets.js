@@ -70,10 +70,19 @@ Object.assign(BattleInput.prototype, {
   },
 });
 
-/* AutoBattle and uncontrollable actors: plain attack on a random living enemy. */
+/* AutoBattle, and battlers that confusion or berserk states control. */
 var BattleAuto = {
+  pick: function (list) { return list.length ? list[Rand.int(0, list.length - 1)] : null; },
   actionFor: function (actor, battle) {
-    var foes = battle.activeEnemies();
-    return new BattleAction({ kind: ACTION.ATTACK, source: actor, target: foes[Rand.int(0, Math.max(0, foes.length - 1))] });
+    return new BattleAction({ kind: ACTION.ATTACK, source: actor, target: this.pick(battle.activeEnemies()) });
+  },
+  /** @returns {BattleAction|null} forced normal attack: restriction 2 hits the other side, 3 its own side */
+  confused: function (b, battle) {
+    var r = BattlerStates.confusion(b);
+    if (!r) return null;
+    var own = b.isEnemy ? battle.activeEnemies() : Party.alive();
+    var other = b.isEnemy ? Party.alive() : battle.activeEnemies();
+    var pool = r === 3 ? own.filter(function (x) { return x !== b; }) : other;
+    return new BattleAction({ kind: ACTION.ATTACK, source: b, target: this.pick(pool.length ? pool : other) });
   },
 };

@@ -32,17 +32,19 @@ ActorBattleSprite.prototype = {
     if (st && st.battler_animation_id != null) return st.battler_animation_id === STATE_POSE_DEFAULT ? POSE.BAD_STATE : st.battler_animation_id;
     return POSE.IDLE;
   },
-  setPose: function (pose, mode) { this.pose = pose; this.mode = mode || POSE_THEN_IDLE; this.cycle = 0; },
+  /* poses set by actions (attack, walk, victory) play as asked; idle poses follow the actor's state */
+  setPose: function (pose, mode) { this.pose = pose; this.mode = mode || POSE_THEN_IDLE; this.cycle = 0; this.idling = false; },
   toIdle: function () {
     var p = this.idlePose();
     this.setPose(p, p === POSE.DEAD ? POSE_HOLD : POSE_LOOP);
+    this.idling = true;
   },
   /** @returns {boolean} true while a one-shot pose is still playing */
   busy: function () { return this.mode === POSE_THEN_IDLE; },
   length: function () { return LONG_POSES.indexOf(this.pose) >= 0 ? 40 : 30; },
   update: function () {
     if (this.flash) { this.flash.t++; if (this.flash.t >= this.flash.frames) this.flash = null; }
-    if (this.mode === POSE_LOOP && this.pose !== this.idlePose() && this.pose <= POSE.DEFEND) this.toIdle();
+    if ((this.idling || this.pose === POSE.DEAD) && this.pose !== this.idlePose()) this.toIdle();
     this.cycle++;
     if (this.cycle < this.length()) return;
     if (this.mode === POSE_LOOP) this.cycle = 0;

@@ -9,6 +9,13 @@ var NO_OP_CODES = [10, 12410, 22410, 20110, 20141, 22011, 20713, 20722, 20732];
 NO_OP_CODES.forEach(function (code) { EventCommands[code] = function () { return true; }; });
 
 var MAX_COMMANDS_PER_FRAME = 1000;
+var unsupportedSeen = {};
+
+function warnUnsupported(code) {
+  if (unsupportedSeen[code]) return;
+  unsupportedSeen[code] = true;
+  console.warn('unsupported event command ' + code + ': skipped');
+}
 
 /**
  * @param {number} eventId map event id that owns the commands (0 = common event)
@@ -82,7 +89,9 @@ Interpreter.prototype = {
   },
   execute: function (c) {
     var run = EventCommands[c.code];
-    return run ? run.call(this, c) : true;   /* unknown codes are skipped like RPG_RT does */
+    if (run) return run.call(this, c);
+    warnUnsupported(c.code);   /* skipped like RPG_RT skips codes it does not know */
+    return true;
   },
 
   /* ---- helpers shared by the command files ---- */

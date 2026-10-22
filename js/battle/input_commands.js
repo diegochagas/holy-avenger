@@ -34,10 +34,12 @@ Object.assign(BattleInput.prototype, {
     w.status.index = Party.members.indexOf(actor);
     this.phase = INPUT.COMMAND;
   },
+  /* back to the party menu (Fight / Auto / Escape); the actor keeps its full gauge */
   onCommandCancel: function () {
     Audio_.sys('cancel');
-    this.battle.readyActors.push(this.actor);   /* RPG_RT cycles to the next ready actor */
-    this.toActorPhase();
+    this.battle.readyActors.unshift(this.actor);
+    this.w().command.active = false;
+    this.showOptions(false);
   },
   onCommand: function (i) {
     var c = this.commands[i];

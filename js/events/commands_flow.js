@@ -43,7 +43,14 @@ EventCommands[12120] = function (c) { /* JumpToLabel */
 };
 
 EventCommands[LOOP_START] = function () { return true; };
-EventCommands[12220] = function (c) { this.skipToIndent([LOOP_END], c.indent); return true; }; /* BreakLoop */
+/* BreakLoop: jump to the end of the innermost loop around it (its end sits at a lower indent) */
+EventCommands[12220] = function (c) {
+  for (var i = this.index + 1; i < this.list.length; i++) {
+    if (this.list[i].code === LOOP_END && this.list[i].indent < c.indent) { this.index = i; return true; }
+  }
+  this.index = this.list.length;
+  return 'jumped';
+};
 EventCommands[LOOP_END] = function (c) {
   for (var i = this.index - 1; i >= 0; i--) {
     if (this.list[i].code === LOOP_START && this.list[i].indent === c.indent) { this.index = i + 1; return 'jumped'; }

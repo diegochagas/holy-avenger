@@ -50,7 +50,7 @@ var BattleRules = {
   normalHitChance: function (src, tgt, condition) {
     if (this.stateFlag(tgt, 'avoid_attacks')) return 0;
     if (!tgt.canAct()) return 100;
-    var hit = src.hitChance();
+    var hit = Math.floor((src.hitChance() * BattlerStates.hitRatio(src)) / 100);
     var weapons = src.isEnemy ? [] : src.weapons();
     if (weapons.some(function (w) { return w.ignore_evasion; })) return hit;
     hit = this.agiHitAdjust(hit, src, tgt);
@@ -134,6 +134,18 @@ var BattleRules = {
   escapeChance: function (avgEnemyAgi, avgActorAgi, fails) {
     var base = 150 - Math.round((100 * avgEnemyAgi) / Math.max(1, avgActorAgi));
     return Math.max(0, Math.min(100, base)) + 10 * fails;
+  },
+  /* a state that stops the battler and never wears off (no release chance, not by damage) */
+  permanentlyStopped: function (b) {
+    return b.states.some(function (id) {
+      var st = DB.state(id);
+      return st && st.restriction === 1 && !(st.auto_release_prob > 0) && !(st.release_by_damage > 0);
+    });
+  },
+  /** @returns {boolean} no actor can act now or recover later: the battle is lost (EasyRPG GB:135-145) */
+  unableToFight: function (actors) {
+    var self = this;
+    return actors.every(function (a) { return a.isDead() || self.permanentlyStopped(a); });
   },
   /** @returns {number} 0 (fresh) .. 100 (exhausted) over the given actors */
   fatigue: function (actors) {

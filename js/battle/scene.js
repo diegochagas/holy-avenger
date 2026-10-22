@@ -33,6 +33,7 @@ SceneBattle.prototype = {
     BattleLayout.placeAll(Party.members, this.enemies, this.condition, this.troop, this.args.terrainId || 0);
     this.sprites = Party.members.map(function (a) { a.defending = false; a.battleTurn = 0; return new ActorBattleSprite(a); });
     BattleATB.initialGauges(Party.members, this.enemies, this.condition, this.args.firstStrike);
+    Party.members.forEach(function (a) { a.clearBattleStats(); a.attackSlot = null; });
     this.buildWindows();
     this.input = new BattleInput(this);
     FloatingNumbers.clear();
@@ -89,21 +90,29 @@ SceneBattle.prototype = {
     var self = this;
     this.enemies.forEach(function (e) {
       if (!BattleATB.isFull(e) || self.queued(e) || !e.exists()) return;
-      self.queueAction(BattleEnemyActions.build(e, self));
+      self.queueAction(BattleAuto.confused(e, self) || BattleEnemyActions.build(e, self));
     });
     Party.members.forEach(function (a) {
       if (!BattleATB.isFull(a) || self.queued(a) || !a.canAct()) return;
-      if (a.autoBattle || a.restriction() > 1 || self.input.phase === INPUT.AUTO) self.queueAction(BattleAuto.actionFor(a, self));
+      var forced = BattleAuto.confused(a, self);
+      if (forced) self.queueAction(forced);
+      else if (a.autoBattle || self.input.phase === INPUT.AUTO) self.queueAction(BattleAuto.actionFor(a, self));
       else self.readyActors.push(a);
     });
   },
-  /* re-check before acting: a battler that died or cannot act loses its turn */
+  /* re-check before acting: a battler that died, cannot act or ran out of SP/items loses its turn */
   stillValid: function (action) {
     var src = action.source;
-    return src.isEnemy ? src.canAct() : src.canAct() && Party.members.indexOf(src) >= 0;
+    if (!src.canAct() || (!src.isEnemy && Party.members.indexOf(src) < 0)) return false;
+    if (action.kind === ACTION.ITEM || action.viaItem) return src.isEnemy || Party.itemCount(action.item) > 0;
+    if (action.kind === ACTION.SKILL) return BattleRules.skillCost(src, DB.skill(action.skill)) <= src.sp;
+    return true;
   },
+  /* the battle is decided: no troop page may start any more */
+  isOver: function () { return !this.activeEnemies().length || BattleRules.unableToFight(Party.members); },
   startNextAction: function () {
     var action = this.queue.shift();
+    action = BattleAuto.confused(action.source, this) || action;
     if (!this.stillValid(action)) return;
     this.turnStarted(action.source);
     this.input.interrupt();
@@ -111,15 +120,18 @@ SceneBattle.prototype = {
     this.runPages(PAGE_MOMENT.BEFORE, action.source);
   },
   actionFinished: function (action) {
+    BattleEnemyActions.applySwitches(action);
     this.runPages(PAGE_MOMENT.AFTER, action.source);
   },
   runPages: function (moment, source) {
+    if (this.isOver()) { this.pageMoment = null; return; }
     var page = TroopPages.next(this, moment, source);
     if (page) this.interpreter.setup(page.event_commands, 0);
     this.pageMoment = { moment: moment, source: source };
   },
   /* keep firing matching pages of the same moment until none is left */
   updateEvents: function () {
+    if (this.interpreter.running() && !this.activeEnemies().length) this.interpreter.list = null;   /* 2003 stops pages once won */
     if (this.interpreter.running()) { this.interpreter.update(); return true; }
     if (MessageWindow.busy()) return true;
     if (!this.pageMoment) return false;

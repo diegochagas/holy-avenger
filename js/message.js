@@ -2,6 +2,13 @@
    choices and number input. Driven by the interpreter through MessageWindow.show(). */
 
 var MessageWindow = {
+  /* RPG Maker 2003: BattleCommands.transparency also makes map messages translucent (160/255),
+     except inside a battle using the traditional layout (EasyRPG window_message.cpp) */
+  backOpacity: function () {
+    var bc = Loader.is2k3() && Loader.db.battlecommands;
+    if (!bc || bc.transparency !== 1) return 1;
+    return Game.battleScene && bc.battle_type === 0 ? 1 : 160 / 255;
+  },
   win: null,
   goldWin: null,
   queue: null,            /* current request */
@@ -50,7 +57,7 @@ var MessageWindow = {
       else if (pos === 1 && py >= 80 - 32 && py < 160) pos = 0;
     }
     this.win.y = pos * 80;
-    this.win.backOpacity = m.transparent ? 0 : 1;
+    this.win.backOpacity = m.transparent ? 0 : MessageWindow.backOpacity();
     this.win.noFrame = m.transparent;
     this.lines = req.lines.map(this.parseLine, this);
     this.choices = null;

@@ -7,7 +7,7 @@ var SKILL_TYPE_SUBSKILL_BASE = 4;
 
 function BattleInput(battle) {
   this.battle = battle;
-  this.phase = INPUT.OPTIONS;
+  this.phase = INPUT.NONE;   /* the opening lines play first; showOptions() hands control over */
   this.actor = null;
   this.pending = null;     /* {kind, skill?, item?} waiting for a target */
   this.counter = 0;
@@ -75,14 +75,20 @@ BattleInput.prototype = {
     else if (this.phase === INPUT.ENEMY) this.updateEnemyTarget();
     else if (this.phase === INPUT.ALLY) this.updateAllyTarget();
   },
+  /* the next ready actor that can still act (it may have died or been paralysed while waiting) */
+  nextReady: function () {
+    var list = this.battle.readyActors;
+    while (list.length && !list[0].canAct()) list.shift();
+    return list.shift() || null;
+  },
   updateActorPhase: function () {
     if (Input.triggered('cancel')) { Input.consume('cancel'); Audio_.sys('cancel'); this.showOptions(false); return; }
-    var next = this.battle.readyActors.shift();
+    var next = this.nextReady();
     if (next) this.openCommands(next);
   },
   updateAuto: function () {
     if (Input.triggered('cancel')) { Input.consume('cancel'); Audio_.sys('cancel'); this.showOptions(false); return; }
-    var next = this.battle.readyActors.shift();
+    var next = this.nextReady();
     if (next) this.battle.queueAction(BattleAuto.actionFor(next, this.battle));
   },
 };

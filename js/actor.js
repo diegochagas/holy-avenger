@@ -4,9 +4,26 @@
 var ACTOR_LIMITS_2K = { hp: 999, exp: 999999, level: 50 };
 var ACTOR_LIMITS_2K3 = { hp: 9999, exp: 9999999, level: 99 };
 var STAT_MAX = 999;
+var STAT_BATTLE_MAX = 9999;
 var CLASS_UNCHANGED = -1;   /* ChangeClass never ran: params/exp from the actor, equip rules from its db class */
 var DEAD_STATE = 1;
 var ITEM_WEAPON = 1, ITEM_SHIELD = 2, ITEM_ACCESSORY = 5;
+
+/* State checks shared by actors and enemies. */
+var BattlerStates = {
+  hasRestriction: function (b, r) {
+    return b.states.some(function (id) { var st = DB.state(id); return st && st.restriction === r; });
+  },
+  /* attack ally (3) / attack enemy (2) / none (0): the confusion-type restriction in effect */
+  confusion: function (b) {
+    if (this.hasRestriction(b, 3)) return 3;
+    return this.hasRestriction(b, 2) ? 2 : 0;
+  },
+  /* worst of hit-rate reductions (blindness, berserk) in percent */
+  hitRatio: function (b) {
+    return b.states.reduce(function (m, id) { var st = DB.state(id); return st ? Math.min(m, st.reduce_hit_ratio) : m; }, 100);
+  },
+};
 
 function actorLimits() { return Loader.is2k3() ? ACTOR_LIMITS_2K3 : ACTOR_LIMITS_2K; }
 
@@ -14,13 +31,7 @@ function actorLimits() { return Loader.is2k3() ? ACTOR_LIMITS_2K3 : ACTOR_LIMITS
 function Actor(id) {
   var d = DB.actor(id);
   this.id = id;
-  this.name = d.name;
-  this.title = d.title;
-  this.charName = d.character_name;
-  this.charIndex = d.character_index;
-  this.transparent = d.transparent;
-  this.faceName = d.face_name;
-  this.faceIndex = d.face_index;
+  this.applyLooks(d);
   this.level = d.initial_level;
   this.classId = CLASS_UNCHANGED;
   this.applyBattleSettings(d, d.battler_animation || 0);
@@ -34,15 +45,28 @@ function Actor(id) {
   this.learnSkillsForLevel();
   this.hp = this.maxHp();
   this.sp = this.maxSp();
-  this.defending = false;
-  this.hidden = false;
-  this.isEnemy = false;
-  this.row = 0;            /* 0 front, 1 back (2003 rows; this game has no Row command) */
-  this.atbGauge = 0;
+  this.resetBattleFields();
 }
 
 Actor.prototype = {
   data: function () { return DB.actor(this.id); },
+  resetBattleFields: function () {
+    this.defending = false;
+    this.hidden = false;
+    this.isEnemy = false;
+    this.row = 0;            /* 0 front, 1 back (2003 rows; this game has no Row command) */
+    this.atbGauge = 0;
+  },
+  /* name, title and graphics from the database (events change them later) */
+  applyLooks: function (d) {
+    this.name = d.name;
+    this.title = d.title;
+    this.charName = d.character_name;
+    this.charIndex = d.character_index;
+    this.transparent = d.transparent;
+    this.faceName = d.face_name;
+    this.faceIndex = d.face_index;
+  },
   /* the class whose tables drive params/exp: only after ChangeClass, like RPG_RT */
   growthClass: function () { return this.classId > 0 ? DB.klass(this.classId) : null; },
   /* the class shown in menus and used for class-based equipment */
@@ -65,9 +89,13 @@ Actor.prototype = {
     return arr[Math.min(this.level, arr.length) - 1] || 0;
   },
   baseParam: function (i) { return this.rawParam(i) + this.paramBonus[i]; },
+  /* attackSlot (0 or 1) is set while a two-weapon actor swings one weapon: the other weapon's
+     bonus does not count for that hit (RPG_RT 2003 multi-hit) */
+  skipsSlot: function (s) { return this.attackSlot != null && s <= 1 && s !== this.attackSlot; },
   equipBonus: function (i) {
     var total = 0;
     for (var s = 0; s < 5; s++) {
+      if (this.skipsSlot(s)) continue;
       var it = this.equip[s] ? DB.item(this.equip[s]) : null;
       if (it) total += [0, 0, it.atk_points1, it.def_points1, it.spi_points1, it.agi_points1][i] || 0;
     }
@@ -84,9 +112,18 @@ Actor.prototype = {
     return m;
   },
   battleParam: function (i, stateKey) {
-    var v = Math.floor((this.baseParam(i) + this.equipBonus(i)) * this.stateMult(stateKey));
-    return Math.max(1, Math.min(STAT_MAX, v));
+    var base = Math.max(1, Math.min(STAT_MAX, this.baseParam(i) + this.equipBonus(i)));
+    var v = Math.floor((base + this.battleMod(i)) * this.stateMult(stateKey));
+    return Math.max(1, Math.min(STAT_BATTLE_MAX, v));
   },
+  battleMod: function (i) { return (this.battleMods && this.battleMods[i]) || 0; },
+  /** stat-change skills: the battle modifier stays within -base/2 .. +base (EasyRPG GBt:731-736) */
+  changeBattleStat: function (i, delta) {
+    this.battleMods = this.battleMods || [0, 0, 0, 0, 0, 0];
+    var base = Math.max(1, Math.min(STAT_MAX, this.baseParam(i) + this.equipBonus(i)));
+    this.battleMods[i] = Math.max(-Math.floor(base / 2), Math.min(base, this.battleMods[i] + delta));
+  },
+  clearBattleStats: function () { this.battleMods = null; },
   atk: function () { return this.battleParam(2, 'affect_attack'); },
   def: function () { return this.battleParam(3, 'affect_defense'); },
   spi: function () { return this.battleParam(4, 'affect_spirit'); },
@@ -96,11 +133,15 @@ Actor.prototype = {
     this.sp = Math.min(this.sp, this.maxSp());
   },
 
-  weapon: function () { return this.equip[0] ? DB.item(this.equip[0]) : null; },
+  weapon: function () {
+    var slot = this.attackSlot === 1 ? 1 : 0;
+    return this.equip[slot] ? DB.item(this.equip[slot]) : null;
+  },
   /* the shield slot holds the second weapon of two-weapon actors */
   weapons: function () {
     var list = [this.weapon()];
     if (this.twoWeapon && this.equip[1]) list.push(DB.item(this.equip[1]));
+    if (this.attackSlot != null) list = [list[this.attackSlot]];
     return list.filter(Boolean);
   },
   /* best hit rate among the weapons in use, 90 unarmed */
@@ -128,7 +169,8 @@ Actor.prototype = {
     }
     return r;
   },
-  canAct: function () { return !this.isDead() && this.restriction() !== 1; },
+  /* any "cannot move" state stops the battler, whatever else it has (EasyRPG CanAct) */
+  canAct: function () { return !this.isDead() && !BattlerStates.hasRestriction(this, 1); },
   addState: function (id) {
     if (this.states.indexOf(id) >= 0) return false;
     if (id === DEAD_STATE) { this.hp = 0; this.states = [DEAD_STATE]; return true; }
@@ -166,6 +208,7 @@ Actor.prototype = {
   },
 
   changeHp: function (delta, lethal) {
+    if (this.isDead()) return;   /* only reviving (removing the dead state) brings HP back */
     var hp = this.hp + delta;
     if (hp <= 0) hp = lethal ? 0 : 1;
     this.hp = Math.min(this.maxHp(), hp);

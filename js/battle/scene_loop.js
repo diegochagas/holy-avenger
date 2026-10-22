@@ -70,10 +70,11 @@ Object.assign(SceneBattle.prototype, {
   },
   escapeNow: function () { this.flow = BattleFlow.escape(this); },
   terminate: function () { this.flow = BattleFlow.finish(this, 'abort'); },
+  /* RPG_RT keeps the absolute HP/SP, clamped to the new maximums */
   transformEnemy: function (e, enemyId) {
-    var keep = e.hp / Math.max(1, e.maxHp());
     e.enemyId = enemyId; e.data = DB.enemy(enemyId); e.name = e.data.name;
-    e.hp = Math.max(1, Math.round(e.maxHp() * keep));
+    e.hp = Math.max(1, Math.min(e.hp, e.maxHp()));
+    e.sp = Math.min(e.sp, e.maxSp());
     e.flash = BattleSprites.makeFlash(31, 31, 31, 31, 20);
   },
 });
@@ -84,18 +85,28 @@ var BattleEnemyActions = {
   build: function (e, battle) {
     var pick = EnemyAI.choose(e, battle);
     if (!pick) return new BattleAction({ kind: ACTION.NOTHING, source: e });
-    if (pick.switch_on) GameState.setSw(pick.switch_on_id, true);
-    if (pick.switch_off) GameState.setSw(pick.switch_off_id, false);
-    if (pick.kind === ENEMY_KIND.SKILL) return this.skillAction(e, pick.skill_id);
+    var action = this.fromPick(e, pick, battle);
+    action.enemyPick = pick;
+    return action;
+  },
+  fromPick: function (e, pick, battle) {
+    if (pick.kind === ENEMY_KIND.SKILL) return this.skillAction(e, pick.skill_id, battle);
     if (pick.kind === ENEMY_KIND.TRANSFORM) return new BattleAction({ kind: ACTION.TRANSFORM, source: e, enemyId: pick.enemy_id });
     var kind = this.BASIC_KIND[pick.basic] || ACTION.NOTHING;
     if (pick.basic === ENEMY_BASIC.ESCAPE && battle.condition === CONDITION.SURROUND) kind = ACTION.NOTHING;
     return new BattleAction({ kind: kind, source: e, target: this.randomActor(), dual: pick.basic === ENEMY_BASIC.DUAL });
   },
-  skillAction: function (e, skillId) {
+  /* the action's switches flip once it has run (EasyRPG Game_BattleAlgorithm switch_on/off) */
+  applySwitches: function (action) {
+    var pick = action.enemyPick;
+    if (!pick) return;
+    if (pick.switch_on) GameState.setSw(pick.switch_on_id, true);
+    if (pick.switch_off) GameState.setSw(pick.switch_off_id, false);
+  },
+  skillAction: function (e, skillId, battle) {
     var sk = DB.skill(skillId);
-    var target = sk.scope === SCOPE.ENEMY ? this.randomActor() : e;
-    return new BattleAction({ kind: ACTION.SKILL, source: e, skill: skillId, target: target });
+    var target = sk.scope === SCOPE.ENEMY ? this.randomActor() : sk.scope === SCOPE.ALLY ? BattleAuto.pick(battle.activeEnemies()) : e;
+    return new BattleAction({ kind: ACTION.SKILL, source: e, skill: skillId, target: target || e });
   },
   randomActor: function () {
     var alive = Party.alive();

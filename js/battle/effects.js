@@ -69,7 +69,14 @@ var BattleEffects = {
     var value = 0;
     if (sk.affect_hp) value = offensive ? this.skillDamage(src, tgt, sk, eff) : this.heal(tgt, eff);
     if (sk.affect_sp) this.skillSp(src, tgt, sk, eff, offensive);
+    if (!(offensive && tgt.isDead())) this.skillStats(tgt, sk, offensive ? -eff : eff);
     return { miss: false, value: Math.abs(value), heal: !offensive && sk.affect_hp };
+  },
+  /* Aumentar/Diminuir Força and friends: battle-only stat modifiers */
+  skillStats: function (tgt, sk, delta) {
+    ['affect_attack', 'affect_defense', 'affect_spirit', 'affect_agility'].forEach(function (key, i) {
+      if (sk[key]) tgt.changeBattleStat(i + 2, delta);
+    });
   },
   skillDamage: function (src, tgt, sk, eff) {
     var dmg = BattleRules.defendHalving(tgt, eff);

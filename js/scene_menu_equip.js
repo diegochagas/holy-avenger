@@ -70,8 +70,10 @@ SceneEquip.prototype = {
     w.text('---', rr.x, rr.y, 0);
     w.dirty = false;
   },
+  /* locked actors and cursed items stay put (RPG Maker 2003) */
   openItems: function (slot) {
-    if (this.actor.lockEquipment) { Audio_.sys('buzzer'); return; }
+    var cur = this.actor.equip[slot] ? DB.item(this.actor.equip[slot]) : null;
+    if (this.actor.lockEquipment || (cur && cur.cursed)) { Audio_.sys('buzzer'); return; }
     Audio_.sys('decision');
     this.refreshItems();
     this.slots.active = false;

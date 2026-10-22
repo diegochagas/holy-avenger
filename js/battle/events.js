@@ -65,9 +65,14 @@ function troopTargets(idx) {
   return idx < 0 ? b.enemies.slice() : [b.enemies[idx]].filter(Boolean);
 }
 
-EventCommands[13110] = function (c) { /* ChangeMonsterHP: [enemy, op, operand, value, lethal] */
-  var p = c.params, amount = this.signed(p[1], this.valueOr(p[2], p[3]));
-  troopTargets(p[0]).forEach(function (e) { e.changeHp(p[4] || amount > 0 ? amount : Math.max(amount, 1 - e.hp)); });
+/* ChangeMonsterHP: [enemy, 0 add / 1 remove, 0 value / 1 variable / 2 percent of current HP, value, lethal] */
+EventCommands[13110] = function (c) {
+  var p = c.params, self = this;
+  troopTargets(p[0]).forEach(function (e) {
+    var n = p[2] === 2 ? Math.floor((e.hp * p[3]) / 100) : self.valueOr(p[2], p[3]);
+    var amount = self.signed(p[1], n);
+    e.changeHp(p[4] || amount > 0 ? amount : Math.max(amount, 1 - e.hp));
+  });
   return true;
 };
 EventCommands[13130] = function (c) { /* ChangeMonsterCondition: [enemy, add/remove, state] */

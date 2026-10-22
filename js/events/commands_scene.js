@@ -2,7 +2,7 @@
 var VICTORY_CASE = 20710, ESCAPE_CASE = 20711, DEFEAT_CASE = 20712, ENCOUNTER_END = 20713;
 var SHOP_BOUGHT_CASE = 20720, SHOP_NOTHING_CASE = 20721, SHOP_END = 20722;
 var INN_STAY_CASE = 20730, INN_LEAVE_CASE = 20731, INN_END = 20732;
-var ESCAPE_ENDS_EVENT = 1, DEFEAT_GAME_OVER = 0;
+var ESCAPE_ENDS_EVENT = 1, ESCAPE_HAS_BRANCH = 2, DEFEAT_GAME_OVER = 0, DEFEAT_HAS_BRANCH = 1;
 
 Object.assign(Interpreter.prototype, {
   /* resume after a scene: index was moved past the command, step back and jump into a branch */
@@ -28,7 +28,8 @@ Object.assign(Interpreter.prototype, {
     if (result === 'escape' && escapeMode === ESCAPE_ENDS_EVENT) { this.list = null; return; }
     if (result === 'defeat' && defeatMode === DEFEAT_GAME_OVER) { Game.gameOver(); this.list = null; return; }
     var code = { victory: VICTORY_CASE, escape: ESCAPE_CASE, defeat: DEFEAT_CASE }[result];
-    this.resumeInBranch(code, c.indent, true);
+    /* branches exist only when escape or defeat has its own handler */
+    this.resumeInBranch(code, c.indent, escapeMode === ESCAPE_HAS_BRANCH || defeatMode === DEFEAT_HAS_BRANCH);
   },
   innGreeting: function (type, price) {
     var g = 'inn_' + type + '_greeting_';

@@ -98,12 +98,16 @@ var GameState = {
       bgm: Audio_.bgmCurrent || null,
       screen: Screen.serialize(),
       pictures: Pictures.serialize(),
-      title: {
-        leader: Party.members[0] ? Party.members[0].name : '',
-        level: Party.members[0] ? Party.members[0].level : 0,
-        hp: Party.members[0] ? Party.members[0].hp : 0,
-        faces: Party.members.map(function (a) { return { name: a.faceName, index: a.faceIndex }; }),
-      },
+      title: this.saveTitleInfo(),
+    };
+  },
+
+  /* what the load screen shows for a slot */
+  saveTitleInfo: function () {
+    var lead = Party.members[0];
+    return {
+      leader: lead ? lead.name : '', level: lead ? lead.level : 0, hp: lead ? lead.hp : 0,
+      faces: Party.members.map(function (a) { return { name: a.faceName, index: a.faceIndex }; }),
     };
   },
 

@@ -30,14 +30,21 @@ function BattleEnemy(member, index) {
 BattleEnemy.prototype = {
   maxHp: function () { return this.data.max_hp; },
   maxSp: function () { return this.data.max_sp; },
-  stat: function (base, key) {
-    var halved = BattleRules.stateFlag(this, key);
-    return Math.max(1, halved ? Math.floor(base / 2) : base);
+  baseStat: function (i) { return [0, 0, this.data.attack, this.data.defense, this.data.spirit, this.data.agility][i]; },
+  stat: function (i, key) {
+    var v = this.baseStat(i) + ((this.battleMods && this.battleMods[i]) || 0);
+    return Math.max(1, BattleRules.stateFlag(this, key) ? Math.floor(v / 2) : v);
   },
-  atk: function () { return this.stat(this.data.attack, 'affect_attack'); },
-  def: function () { return this.stat(this.data.defense, 'affect_defense'); },
-  spi: function () { return this.stat(this.data.spirit, 'affect_spirit'); },
-  agi: function () { return this.stat(this.data.agility, 'affect_agility'); },
+  /** stat-change skills: modifier within -base/2 .. +base */
+  changeBattleStat: function (i, delta) {
+    this.battleMods = this.battleMods || [0, 0, 0, 0, 0, 0];
+    var base = this.baseStat(i);
+    this.battleMods[i] = Math.max(-Math.floor(base / 2), Math.min(base, this.battleMods[i] + delta));
+  },
+  atk: function () { return this.stat(2, 'affect_attack'); },
+  def: function () { return this.stat(3, 'affect_defense'); },
+  spi: function () { return this.stat(4, 'affect_spirit'); },
+  agi: function () { return this.stat(5, 'affect_agility'); },
   weapons: function () { return []; },
   hitChance: function () { return this.data.miss ? 70 : 90; },
   critChance: function () { return this.data.critical_hit ? 100 / Math.max(1, this.data.critical_hit_chance) : 0; },
@@ -50,7 +57,7 @@ BattleEnemy.prototype = {
   restriction: function () {
     return this.states.reduce(function (r, id) { var st = DB.state(id); return st && st.restriction > r ? st.restriction : r; }, 0);
   },
-  canAct: function () { return this.exists() && this.restriction() !== 1; },
+  canAct: function () { return this.exists() && !BattlerStates.hasRestriction(this, 1); },
   rank: function (ranks, id) { return ranks[id - 1] == null ? 2 : ranks[id - 1]; },
   attributeRate: function (id) {
     var at = DB.attribute(id);

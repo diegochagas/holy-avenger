@@ -40,7 +40,7 @@ var BattleFlow = {
   /** @returns {boolean} true when the battle just ended (a flow took over) */
   checkEnd: function (b) {
     if (!b.activeEnemies().length) { b.flow = this.victory(b); return true; }
-    if (Party.allDead()) { b.flow = this.defeat(b); return true; }
+    if (BattleRules.unableToFight(Party.members)) { b.flow = this.defeat(b); return true; }
     return false;
   },
   rewards: function (b) {
@@ -102,7 +102,7 @@ var BattleFlow = {
   close: function (b, result) {
     BattleAnim.clear();
     FloatingNumbers.clear();
-    Party.members.forEach(function (a) { a.defending = false; });
+    Party.members.forEach(function (a) { a.defending = false; a.clearBattleStats(); a.attackSlot = null; });
     if (result !== 'defeat' && b.mapBgm) Audio_.playBgm(b.mapBgm);
     Game.battleScene = null;
     b.flow = { update: function () { return false; } };   /* frozen until the scene is popped */
