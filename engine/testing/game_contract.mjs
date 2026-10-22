@@ -39,9 +39,11 @@ export function checkGameRepo(expected) {
 
   test("converted data matches the engine and has every map", { skip: !readData("manifest.json") }, () => {
     assert.equal(readData("manifest.json").engine || "2k", expected.engine);
-    const missing = Object.keys(readData("maptree.json").maps).filter((id) => {
+    const tree = readData("maptree.json").maps;
+    const MAP_TYPE = 1;   // 0 is the root, 2 an area (a region of its parent map, no file)
+    const missing = Object.keys(tree).filter((id) => {
       const file = "maps/map" + String(id).padStart(4, "0") + ".json";
-      return id !== "0" && !fs.existsSync(new URL("data/" + file, ROOT));
+      return tree[id].type === MAP_TYPE && !fs.existsSync(new URL("data/" + file, ROOT));
     });
     assert.deepEqual(missing, []);
   });
